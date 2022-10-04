@@ -20,6 +20,12 @@ namespace Sanssoussi
         {
             services.AddRazorPages();
             services.AddControllersWithViews();
+
+            services.AddAuthentication().AddGoogle(googleOptions =>
+            {
+                googleOptions.ClientId = this.Configuration["Authentication:Google:ClientId"];
+                googleOptions.ClientSecret = this.Configuration["Authentication:Google:ClientSecret"];
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
