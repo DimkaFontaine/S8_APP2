@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
@@ -47,7 +48,11 @@ namespace Sanssoussi.Controllers
                 return this.View(comments);
             }
 
-            var cmd = new SqliteCommand($"Select Comment from Comments where UserId ='{user.Id}'", this._dbConnection);
+            var cmdText = $"Select Comment from Comments where UserId = @userId";
+            var cmd = new SqliteCommand(cmdText, this._dbConnection);
+            cmd.Parameters.Add("@userId", SqliteType.Text);
+            cmd.Parameters["@userId"].Value = user.Id;
+
             this._dbConnection.Open();
             var rd = await cmd.ExecuteReaderAsync();
 
@@ -72,9 +77,19 @@ namespace Sanssoussi.Controllers
             }
 
             var cmd = new SqliteCommand(
-                $"insert into Comments (UserId, CommentId, Comment) Values ('{user.Id}','{Guid.NewGuid()}','" + comment + "')",
+                $"insert into Comments (UserId, CommentId, Comment) Values (@userId, @guid, @comment)",
                 this._dbConnection);
+
+            cmd.Parameters.Add("@userId", SqliteType.Text);
+            cmd.Parameters.Add("@guid", SqliteType.Text);
+            cmd.Parameters.Add("@comment", SqliteType.Text);
+
+            cmd.Parameters["@userId"].Value = user.Id;
+            cmd.Parameters["@guid"].Value = Guid.NewGuid();
+            cmd.Parameters["@comment"].Value = comment;
+
             this._dbConnection.Open();
+
             await cmd.ExecuteNonQueryAsync();
 
             return this.Ok("Commentaire ajouté");
@@ -90,7 +105,14 @@ namespace Sanssoussi.Controllers
                 return this.View(searchResults);
             }
 
-            var cmd = new SqliteCommand($"Select Comment from Comments where UserId = '{user.Id}' and Comment like '%{searchData}%'", this._dbConnection);
+            var cmd = new SqliteCommand($"Select Comment from Comments where UserId = @userId and Comment like @searchData", this._dbConnection);
+
+            cmd.Parameters.Add("@userId", SqliteType.Text);
+            cmd.Parameters.Add("@searchData", SqliteType.Text);
+
+            cmd.Parameters["@userId"].Value = user.Id;
+            cmd.Parameters["@searchData"].Value = searchData;
+
             this._dbConnection.Open();
             var rd = await cmd.ExecuteReaderAsync();
             while (rd.Read())
