@@ -50,9 +50,7 @@ namespace Sanssoussi.Controllers
             { 
                 var cmdText = $"Select Comment from Comments where UserId = @userId";
                 var cmd = new SqliteCommand(cmdText, this._dbConnection);
-                cmd.Parameters.Add("@userId", SqliteType.Text);
-                cmd.Parameters["@userId"].Value = user.Id;
-
+                cmd.Parameters.AddWithValue("@userId", user.Id);
 
                 this._dbConnection.Open();
 
@@ -134,11 +132,8 @@ namespace Sanssoussi.Controllers
                     $"Select Comment from Comments where UserId = @userId and Comment like @searchData",
                     this._dbConnection);
 
-                cmd.Parameters.Add("@userId", SqliteType.Text);
-                cmd.Parameters.Add("@searchData", SqliteType.Text);
-
-                cmd.Parameters["@userId"].Value = user.Id;
-                cmd.Parameters["@searchData"].Value = searchData;
+                cmd.Parameters.AddWithValue("@userId", user.Id);
+                cmd.Parameters.AddWithValue("@searchData", HttpUtility.HtmlEncode(searchData));
 
                 this._dbConnection.Open();
 

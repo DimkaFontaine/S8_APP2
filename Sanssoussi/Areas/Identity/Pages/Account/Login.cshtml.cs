@@ -102,19 +102,17 @@ namespace Sanssoussi.Areas.Identity.Pages.Account
                     this._logger.LogWarning("LockoutEnd: " + newLockOutEnd);
                     var cmdUpdateLockoutEndText = $"UPDATE AspNetUsers SET LockoutEnd = @lockoutEnd WHERE Email = @userEmail";
                     var cmdUpdateLockoutEnd = new SqliteCommand(cmdUpdateLockoutEndText, this._dbConnection);
-                    cmdUpdateLockoutEnd.Parameters.Add("@lockoutEnd", SqliteType.Text);
-                    cmdUpdateLockoutEnd.Parameters.Add("@userEmail", SqliteType.Text);
-                    cmdUpdateLockoutEnd.Parameters["@userEmail"].Value = this.Input.Email;
-                    cmdUpdateLockoutEnd.Parameters["@lockoutEnd"].Value = newLockOutEnd;
+                    cmdUpdateLockoutEnd.Parameters.AddWithValue("@lockoutEnd", newLockOutEnd);
+                    cmdUpdateLockoutEnd.Parameters.AddWithValue("@userEmail", this.Input.Email);
                     var rdLockoutEnd = await cmdUpdateLockoutEnd.ExecuteReaderAsync();
                     rdLockoutEnd.Close();
+
                     return this.RedirectToPage("./Lockout");
                 }
 
                 var cmdCheckFailedCountText = $"Select AccessFailedCount from AspNetUsers where Email = @userEmail";
                 var cmdCheckFailedCount = new SqliteCommand(cmdCheckFailedCountText, this._dbConnection);
-                cmdCheckFailedCount.Parameters.Add("@userEmail", SqliteType.Text);
-                cmdCheckFailedCount.Parameters["@userEmail"].Value = this.Input.Email;
+                cmdCheckFailedCount.Parameters.AddWithValue("@userEmail", this.Input.Email);
 
                 var rdCheckFailedCount = await cmdCheckFailedCount.ExecuteReaderAsync();
                 int failCount = 0;
