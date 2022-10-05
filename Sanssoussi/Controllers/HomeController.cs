@@ -173,45 +173,45 @@ namespace Sanssoussi.Controllers
             return this.View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? this.HttpContext.TraceIdentifier });
         }
 
-        [HttpGet]
-        public IActionResult Emails()
-        {
-            return this.View();
-        }
+        //[HttpGet]
+        //public IActionResult Emails()
+        //{
+        //    return this.View();
+        //}
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Emails(object form)
-        {
-            var searchResults = new List<string>();
-            SqliteDataReader rd = null;
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<ActionResult> Emails(object form)
+        //{
+        //    var searchResults = new List<string>();
+        //    SqliteDataReader rd = null;
 
-            var user = await this._userManager.GetUserAsync(this.User);
-            var roles = await this._userManager.GetRolesAsync(user);
-            if (roles.Contains("admin"))
-            {
-                try
-                {
-                    var cmd = new SqliteCommand("select Email from AspNetUsers", this._dbConnection);
-                    this._dbConnection.Open();
-                    rd = await cmd.ExecuteReaderAsync();
-                    while (rd.Read())
-                    {
-                        searchResults.Add(rd.GetString(0));
-                    }
-                }
-                catch (SqliteException ex)
-                {
-                    var code = "(" + ex.SqliteErrorCode + ") " + ex.SqliteExtendedErrorCode;
-                    this._logger.LogError("Une erreur est survenue lors de la recherche de courriel. " + code);
-                }
-                finally
-                {
-                    if(rd != null) rd.Close();
-                    if(this._dbConnection != null) this._dbConnection.Close();
-                }
-            }
-            return this.Json(searchResults);
-        }
+        //    var user = await this._userManager.GetUserAsync(this.User);
+        //    var roles = await this._userManager.GetRolesAsync(user);
+        //    if (roles.Contains("admin"))
+        //    {
+        //        try
+        //        {
+        //            var cmd = new SqliteCommand("select Email from AspNetUsers", this._dbConnection);
+        //            this._dbConnection.Open();
+        //            rd = await cmd.ExecuteReaderAsync();
+        //            while (rd.Read())
+        //            {
+        //                searchResults.Add(rd.GetString(0));
+        //            }
+        //        }
+        //        catch (SqliteException ex)
+        //        {
+        //            var code = "(" + ex.SqliteErrorCode + ") " + ex.SqliteExtendedErrorCode;
+        //            this._logger.LogError("Une erreur est survenue lors de la recherche de courriel. " + code);
+        //        }
+        //        finally
+        //        {
+        //            if(rd != null) rd.Close();
+        //            if(this._dbConnection != null) this._dbConnection.Close();
+        //        }
+        //    }
+        //    return this.Json(searchResults);
+        //}
     }
 }
