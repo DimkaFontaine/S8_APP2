@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
-
+using System.Web;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
@@ -85,6 +85,7 @@ namespace Sanssoussi.Controllers
         public async Task<IActionResult> Comments(string comment)
         {
             var user = await this._userManager.GetUserAsync(this.User);
+
             if (user == null)
             {
                 throw new InvalidOperationException("Vous devez vous connecter");
@@ -96,13 +97,9 @@ namespace Sanssoussi.Controllers
                     $"insert into Comments (UserId, CommentId, Comment) Values (@userId, @guid, @comment)",
                     this._dbConnection);
 
-                cmd.Parameters.Add("@userId", SqliteType.Text);
-                cmd.Parameters.Add("@guid", SqliteType.Text);
-                cmd.Parameters.Add("@comment", SqliteType.Text);
-
-                cmd.Parameters["@userId"].Value = user.Id;
-                cmd.Parameters["@guid"].Value = Guid.NewGuid();
-                cmd.Parameters["@comment"].Value = comment;
+                cmd.Parameters.AddWithValue("@userId", user.Id);
+                cmd.Parameters.AddWithValue("@guid", Guid.NewGuid());
+                cmd.Parameters.AddWithValue("@comment", HttpUtility.HtmlEncode(comment));
 
                 this._dbConnection.Open();
 
