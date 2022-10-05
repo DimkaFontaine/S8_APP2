@@ -77,10 +77,13 @@ namespace Sanssoussi.Areas.Identity.Pages.Account
                 // This doesn't count login failures towards account lockout
                 // To enable password failures to trigger account lockout, set lockoutOnFailure: true
                 var result = await this._signInManager.PasswordSignInAsync(
-                                 this.Input.Email,
-                                 this.Input.Password,
-                                 this.Input.RememberMe,
-                                 lockoutOnFailure: true);
+                    this.Input.Email,
+                    this.Input.Password,
+                    this.Input.RememberMe,
+                    lockoutOnFailure: true);
+
+                this._dbConnection.Open();
+
                 if (result.Succeeded)
                 {
                     this._logger.LogInformation("User logged in.");
@@ -94,7 +97,17 @@ namespace Sanssoussi.Areas.Identity.Pages.Account
 
                 if (result.IsLockedOut)
                 {
+                    var newLockOutEnd = DateTime.Now.AddMinutes(2).ToString("yyyy-MM-dd HH:mm:ss.fffffffK").Replace('T', ' ');
                     this._logger.LogWarning("User account locked out.");
+                    this._logger.LogWarning("LockoutEnd: " + newLockOutEnd);
+                    var cmdUpdateLockoutEndText = $"UPDATE AspNetUsers SET LockoutEnd = @lockoutEnd WHERE Email = @userEmail";
+                    var cmdUpdateLockoutEnd = new SqliteCommand(cmdUpdateLockoutEndText, this._dbConnection);
+                    cmdUpdateLockoutEnd.Parameters.Add("@lockoutEnd", SqliteType.Text);
+                    cmdUpdateLockoutEnd.Parameters.Add("@userEmail", SqliteType.Text);
+                    cmdUpdateLockoutEnd.Parameters["@userEmail"].Value = this.Input.Email;
+                    cmdUpdateLockoutEnd.Parameters["@lockoutEnd"].Value = newLockOutEnd;
+                    var rdLockoutEnd = await cmdUpdateLockoutEnd.ExecuteReaderAsync();
+                    rdLockoutEnd.Close();
                     return this.RedirectToPage("./Lockout");
                 }
 
@@ -103,29 +116,16 @@ namespace Sanssoussi.Areas.Identity.Pages.Account
                 cmdCheckFailedCount.Parameters.Add("@userEmail", SqliteType.Text);
                 cmdCheckFailedCount.Parameters["@userEmail"].Value = this.Input.Email;
 
-                this._dbConnection.Open();
-
-                var rd = await cmdCheckFailedCount.ExecuteReaderAsync();
+                var rdCheckFailedCount = await cmdCheckFailedCount.ExecuteReaderAsync();
                 int failCount = 0;
 
-                while (rd.Read())
+                while (rdCheckFailedCount.Read())
                 {
-                    failCount = Int16.Parse(rd.GetString(0));
+                    failCount = Int16.Parse(rdCheckFailedCount.GetString(0));
                 }
-                rd.Close();
+                rdCheckFailedCount.Close();
 
-
-                var cmdSetFailedCountText = $"UPDATE AspNetUsers SET AccessFailedCount = @failCount WHERE Email = @userEmail";
-                var cmdSetFailedCount = new SqliteCommand(cmdSetFailedCountText, this._dbConnection);
-                cmdSetFailedCount.Parameters.Add("@failCount", SqliteType.Integer);
-                cmdSetFailedCount.Parameters.Add("@userEmail", SqliteType.Text);
-                cmdSetFailedCount.Parameters["@failCount"].Value = failCount + 1;
-                cmdSetFailedCount.Parameters["@userEmail"].Value = this.Input.Email;
-                var rd2 = await cmdSetFailedCount.ExecuteReaderAsync();
-
-                rd2.Close();
                 this._dbConnection.Close();
-
 
                 this.ModelState.AddModelError(string.Empty, "Invalid login attempt. (" + failCount + ")");
 
