@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Net;
 
 namespace Sanssoussi
 {
@@ -32,6 +33,12 @@ namespace Sanssoussi
             	options.CheckConsentNeeded = context => true;
             	options.MinimumSameSitePolicy = SameSiteMode.Lax;
             });
+
+            services.AddHttpsRedirection(options =>
+            {
+                options.RedirectStatusCode = (int)HttpStatusCode.TemporaryRedirect;
+                options.HttpsPort = 5001;
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -49,7 +56,9 @@ namespace Sanssoussi
 
             app.UseStaticFiles();
 
+            app.UseHttpsRedirection();
             app.UseCookiePolicy();
+
             app.UseRouting();
             app.UseAuthentication();
 
