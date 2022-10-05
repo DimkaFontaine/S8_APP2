@@ -39,25 +39,39 @@ namespace Sanssoussi.Controllers
         public async Task<IActionResult> Comments()
         {
             var comments = new List<string>();
+            SqliteDataReader rd = null;
 
             var user = await this._userManager.GetUserAsync(this.User);
             if (user == null)
             {
                 return this.View(comments);
             }
+            try
+            { 
+                var cmdText = $"Select Comment from Comments where UserId = @userId";
+                var cmd = new SqliteCommand(cmdText, this._dbConnection);
+                cmd.Parameters.Add("@userId", SqliteType.Text);
+                cmd.Parameters["@userId"].Value = user.Id;
 
-            var cmdText = $"Select Comment from Comments where UserId = @userId";
-            var cmd = new SqliteCommand(cmdText, this._dbConnection);
-            cmd.Parameters.Add("@userId", SqliteType.Text);
-            cmd.Parameters["@userId"].Value = user.Id;
 
-            this._dbConnection.Open();
+                this._dbConnection.Open();
 
-            var rd = await cmd.ExecuteReaderAsync();
+                rd = await cmd.ExecuteReaderAsync();
 
-            while (rd.Read())
+                while (rd.Read())
+                {
+                    comments.Add(rd.GetString(0));
+                }
+            }
+            catch (SqliteException ex)
             {
-                comments.Add(rd.GetString(0));
+                var code = "(" + ex.SqliteErrorCode + ") " + ex.SqliteExtendedErrorCode;
+                this._logger.LogError("Une erreur est survenue lors de la selection de commentaire dans la base de données. " + code);
+            }
+            finally
+            {
+                if (rd != null) rd.Close();
+                if (this._dbConnection != null) this._dbConnection.Close();
             }
 
             rd.Close();
@@ -76,21 +90,33 @@ namespace Sanssoussi.Controllers
                 throw new InvalidOperationException("Vous devez vous connecter");
             }
 
-            var cmd = new SqliteCommand(
-                $"insert into Comments (UserId, CommentId, Comment) Values (@userId, @guid, @comment)",
-                this._dbConnection);
+            try
+            {
+                var cmd = new SqliteCommand(
+                    $"insert into Comments (UserId, CommentId, Comment) Values (@userId, @guid, @comment)",
+                    this._dbConnection);
 
-            cmd.Parameters.Add("@userId", SqliteType.Text);
-            cmd.Parameters.Add("@guid", SqliteType.Text);
-            cmd.Parameters.Add("@comment", SqliteType.Text);
+                cmd.Parameters.Add("@userId", SqliteType.Text);
+                cmd.Parameters.Add("@guid", SqliteType.Text);
+                cmd.Parameters.Add("@comment", SqliteType.Text);
 
-            cmd.Parameters["@userId"].Value = user.Id;
-            cmd.Parameters["@guid"].Value = Guid.NewGuid();
-            cmd.Parameters["@comment"].Value = comment;
+                cmd.Parameters["@userId"].Value = user.Id;
+                cmd.Parameters["@guid"].Value = Guid.NewGuid();
+                cmd.Parameters["@comment"].Value = comment;
 
-            this._dbConnection.Open();
+                this._dbConnection.Open();
 
-            await cmd.ExecuteNonQueryAsync();
+                await cmd.ExecuteNonQueryAsync();
+            }
+            catch (SqliteException ex)
+            {
+                var code = "(" + ex.SqliteErrorCode + ") " + ex.SqliteExtendedErrorCode;
+                this._logger.LogError("Une erreur est survenue lors de l'ajout de commentaire. " + code);
+            }
+            finally
+            {
+                if (this._dbConnection != null) this._dbConnection.Close();
+            }
 
             return this.Ok("Commentaire ajouté");
         }
@@ -98,31 +124,44 @@ namespace Sanssoussi.Controllers
         public async Task<IActionResult> Search(string searchData)
         {
             var searchResults = new List<string>();
+            SqliteDataReader rd = null;
 
             var user = await this._userManager.GetUserAsync(this.User);
             if (user == null || string.IsNullOrEmpty(searchData))
             {
                 return this.View(searchResults);
             }
-
-            var cmd = new SqliteCommand($"Select Comment from Comments where UserId = @userId and Comment like @searchData", this._dbConnection);
-
-            cmd.Parameters.Add("@userId", SqliteType.Text);
-            cmd.Parameters.Add("@searchData", SqliteType.Text);
-
-            cmd.Parameters["@userId"].Value = user.Id;
-            cmd.Parameters["@searchData"].Value = searchData;
-
-            this._dbConnection.Open();
-            var rd = await cmd.ExecuteReaderAsync();
-            while (rd.Read())
+            try
             {
-                searchResults.Add(rd.GetString(0));
+                var cmd = new SqliteCommand(
+                    $"Select Comment from Comments where UserId = @userId and Comment like @searchData",
+                    this._dbConnection);
+
+                cmd.Parameters.Add("@userId", SqliteType.Text);
+                cmd.Parameters.Add("@searchData", SqliteType.Text);
+
+                cmd.Parameters["@userId"].Value = user.Id;
+                cmd.Parameters["@searchData"].Value = searchData;
+
+                this._dbConnection.Open();
+
+                rd = await cmd.ExecuteReaderAsync();
+
+                while (rd.Read())
+                {
+                    searchResults.Add(rd.GetString(0));
+                }
             }
-
-            rd.Close();
-            this._dbConnection.Close();
-
+            catch (SqliteException ex)
+            {
+                var code = "(" + ex.SqliteErrorCode + ") " + ex.SqliteExtendedErrorCode;
+                this._logger.LogError("Une erreur est survenue lors de la recherche de courriel. " + code);
+            }
+            finally
+            {
+                if(rd != null) rd.Close();
+                if(this._dbConnection != null) this._dbConnection.Close();
+            }
             return this.View(searchResults);
         }
 
@@ -153,24 +192,33 @@ namespace Sanssoussi.Controllers
         public async Task<ActionResult> Emails(object form)
         {
             var searchResults = new List<string>();
+            SqliteDataReader rd = null;
 
             var user = await this._userManager.GetUserAsync(this.User);
             var roles = await this._userManager.GetRolesAsync(user);
             if (roles.Contains("admin"))
             {
-                var cmd = new SqliteCommand("select Email from AspNetUsers", this._dbConnection);
-                this._dbConnection.Open();
-                var rd = await cmd.ExecuteReaderAsync();
-                while (rd.Read())
+                try
                 {
-                    searchResults.Add(rd.GetString(0));
+                    var cmd = new SqliteCommand("select Email from AspNetUsers", this._dbConnection);
+                    this._dbConnection.Open();
+                    rd = await cmd.ExecuteReaderAsync();
+                    while (rd.Read())
+                    {
+                        searchResults.Add(rd.GetString(0));
+                    }
                 }
-
-                rd.Close();
-
-                this._dbConnection.Close();
+                catch (SqliteException ex)
+                {
+                    var code = "(" + ex.SqliteErrorCode + ") " + ex.SqliteExtendedErrorCode;
+                    this._logger.LogError("Une erreur est survenue lors de la recherche de courriel. " + code);
+                }
+                finally
+                {
+                    if(rd != null) rd.Close();
+                    if(this._dbConnection != null) this._dbConnection.Close();
+                }
             }
-
             return this.Json(searchResults);
         }
     }
