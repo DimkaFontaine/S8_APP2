@@ -86,7 +86,7 @@ namespace Sanssoussi.Areas.Identity.Pages.Account
 
                 if (result.Succeeded)
                 {
-                    this._logger.LogInformation("User logged in.");
+                    this._logger.LogInformation("User logged in: " + this.Input.Email);
                     return this.LocalRedirect(returnUrl);
                 }
 
