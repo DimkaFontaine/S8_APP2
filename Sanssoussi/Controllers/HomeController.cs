@@ -155,7 +155,7 @@ namespace Sanssoussi.Controllers
             catch (SqliteException ex)
             {
                 var code = "(" + ex.SqliteErrorCode + ") " + ex.SqliteExtendedErrorCode;
-                this._logger.LogError("Une erreur est survenue lors de la recherche de courriel. " + code);
+                this._logger.LogError("Une erreur est survenue lors de la recherche de commentaire. " + code);
             }
             finally
             {
