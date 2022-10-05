@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Diagnostics;
-using System.Text;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Identity;
@@ -54,6 +52,7 @@ namespace Sanssoussi.Controllers
             cmd.Parameters["@userId"].Value = user.Id;
 
             this._dbConnection.Open();
+
             var rd = await cmd.ExecuteReaderAsync();
 
             while (rd.Read())
@@ -63,6 +62,7 @@ namespace Sanssoussi.Controllers
 
             rd.Close();
             this._dbConnection.Close();
+
 
             return this.View(comments);
         }
