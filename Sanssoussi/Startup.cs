@@ -49,10 +49,10 @@ namespace Sanssoussi
                 app.UseDeveloperExceptionPage();
                 app.UseDatabaseErrorPage();
             }
-            else
-            {
-                app.UseExceptionHandler("/Home/Error");
-            }
+            // else
+            // {
+            //     //app.UseExceptionHandler("/Home/Error");
+            // }
 
             app.UseStaticFiles();
 
